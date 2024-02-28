@@ -108,7 +108,6 @@ export function pointListToDashedLinePrimitive(
   } as LinePrimitive;
 }
 
-
 export function objectToCubePrimitive(
   x: number,
   y: number,
