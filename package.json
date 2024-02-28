@@ -1,10 +1,10 @@
 {
   "name": "asam-osi-visualizer",
-  "displayName": "asam-osi-visualizer",
+  "displayName": "ASAM OSI Visualizer",
   "description": "",
   "publisher": "unknown",
   "homepage": "",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "license": "UNLICENSED",
   "main": "./dist/extension.js",
   "keywords": [],
