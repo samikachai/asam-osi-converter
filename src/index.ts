@@ -21,6 +21,7 @@ import {
   OsiMovingObjectVehicleClassificationLightStateBrakeLightState,
   OsiMovingObjectVehicleClassificationLightStateIndicatorState,
   OsiMovingObjectVehicleClassificationLightStateGenericLightState,
+  OsiIdentifier,
 } from "./types/osiGroundTruth";
 import {
   pointListToLinePrimitive,
@@ -117,7 +118,12 @@ function buildLaneBoundaryEntity(
   };
 }
 
-const lightStateEnumStringMaps = {
+interface IlightStateEnumStringMaps {
+  generic_light_state: typeof OsiMovingObjectVehicleClassificationLightStateGenericLightState;
+  [key: string]: Record<number, string>;
+};
+
+const lightStateEnumStringMaps: IlightStateEnumStringMaps = {
   indicator_state: OsiMovingObjectVehicleClassificationLightStateIndicatorState,
   brake_light_state: OsiMovingObjectVehicleClassificationLightStateBrakeLightState,
   generic_light_state: OsiMovingObjectVehicleClassificationLightStateGenericLightState,
@@ -131,16 +137,16 @@ export function buildVehicleMetadata(
       key: "type",
       value: OsiMovingObjectVehicleClassificationType[vehicle_classification.type.value],
     },
-    ...Object.entries(vehicle_classification.light_state).map(([_key, { value }]) => {
-      const key = _key as keyof typeof lightStateEnumStringMaps;
-      return {
-        key: `light_state.${key}`,
-        value:
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          lightStateEnumStringMaps[key]?.[value] ??
-          lightStateEnumStringMaps.generic_light_state[value]!,
-      };
-    }),
+    ...Object.entries(vehicle_classification.light_state).map(
+      ([key, { value }]: [string, OsiIdentifier]) => {
+        return {
+          key: `light_state.${key}`,
+          value:
+            lightStateEnumStringMaps[key]?.[value] ??
+            lightStateEnumStringMaps.generic_light_state[value]!,
+        };
+      },
+    ),
   ];
 }
 
