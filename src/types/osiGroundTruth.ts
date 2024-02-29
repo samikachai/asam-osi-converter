@@ -129,7 +129,6 @@ export interface OsiMovingObjectVehicleClassification {
 export interface OsiObject {
   id: OsiIdentifier;
   base: OsiBase;
-  vehicle_attributes: OsiVehicleAttributes;
 }
 
 export interface OsiMovingObject extends OsiObject {
