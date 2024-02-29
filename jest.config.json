@@ -1,0 +1,11 @@
+{
+  "testRunner": "jest-circus/runner",
+  "testMatch": ["<rootDir>/src/**/*.test.ts"],
+  "transform": {
+    "^.+\\.ts$": [
+      "esbuild-jest", {
+        "sourcemap": true
+      }
+    ]
+  }
+}
