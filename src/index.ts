@@ -9,6 +9,7 @@ import {
   MOVING_OBJECT_COLOR,
   STATIONARY_OBJECT_COLOR,
 } from "./config";
+import { preloadDynamicTextures, buildTrafficSignModel } from "./trafficsigns";
 import {
   OsiGroundTruth,
   OsiObject,
@@ -22,13 +23,14 @@ import {
   OsiMovingObjectVehicleClassificationLightStateIndicatorState,
   OsiMovingObjectVehicleClassificationLightStateGenericLightState,
   OsiIdentifier,
+  OsiTrafficSign,
 } from "./types/osiGroundTruth";
 import {
   pointListToLinePrimitive,
   pointListToDashedLinePrimitive,
   objectToCubePrimitive,
 } from "./utils/marker";
-import { buildSceneEntityDeletions, PartialSceneEntity } from "./utils/scene";
+import { PartialSceneEntity } from "./utils/scene";
 
 const ROOT_FRAME = "<root>";
 
@@ -63,6 +65,35 @@ function buildObjectEntity(
     lifetime: { sec: 0, nsec: 0 },
     frame_locked: true,
     cubes: [cube],
+    metadata,
+  };
+}
+
+function buildTrafficSignEntity(
+  obj: OsiTrafficSign,
+  id_prefix: string,
+  frame_id: string,
+  time: Time,
+  metadata?: KeyValuePair[],
+): PartialSceneEntity {
+  const models = [];
+
+  models.push(buildTrafficSignModel("main", obj.main_sign));
+
+  if (obj.supplementary_sign.length > 0) {
+    for (const item of obj.supplementary_sign) {
+      models.push(buildTrafficSignModel("main", item));
+    }
+  }
+
+  return {
+    timestamp: time,
+    frame_id,
+    id: id_prefix + obj.id.value.toString(),
+    lifetime: { sec: 0, nsec: 0 },
+    frame_locked: true,
+    // texts,
+    models,
     metadata,
   };
 }
@@ -121,7 +152,7 @@ function buildLaneBoundaryEntity(
 interface IlightStateEnumStringMaps {
   generic_light_state: typeof OsiMovingObjectVehicleClassificationLightStateGenericLightState;
   [key: string]: Record<number, string>;
-};
+}
 
 const lightStateEnumStringMaps: IlightStateEnumStringMaps = {
   indicator_state: OsiMovingObjectVehicleClassificationLightStateIndicatorState,
@@ -172,9 +203,27 @@ function osiTimestampToTime(time: OsiTimestamp): Time {
   };
 }
 
+const staticObjectsRenderCache: {
+  lastRenderTime: Time | undefined;
+  lastRenderedObjects: Set<number>;
+} = {
+  lastRenderTime: undefined,
+  lastRenderedObjects: new Set<number>(),
+};
+
+export function determineTheNeedToRerender(lastRenderTime: Time, currentRenderTime: Time): boolean {
+  return (
+    lastRenderTime.sec > currentRenderTime.sec ||
+    (lastRenderTime.sec === currentRenderTime.sec && lastRenderTime.nsec > currentRenderTime.nsec)
+  );
+}
+
 function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[] {
   let sceneEntities: PartialSceneEntity[] = [];
   const time: Time = osiTimestampToTime(osiGroundTruth.timestamp);
+  const needtoRerender =
+    staticObjectsRenderCache.lastRenderTime !== undefined &&
+    determineTheNeedToRerender(staticObjectsRenderCache.lastRenderTime, time);
 
   // Moving objects
   const movingObjectSceneEntities = osiGroundTruth.moving_object.map((obj) => {
@@ -203,6 +252,23 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
   });
   sceneEntities = sceneEntities.concat(stationaryObjectSceneEntities);
 
+  // Traffic Sign objects
+  let filteredTrafficSigns: OsiTrafficSign[];
+  if (needtoRerender) {
+    staticObjectsRenderCache.lastRenderedObjects.clear();
+    filteredTrafficSigns = osiGroundTruth.traffic_sign;
+  } else {
+    filteredTrafficSigns = osiGroundTruth.traffic_sign.filter((obj) => {
+      return !staticObjectsRenderCache.lastRenderedObjects.has(obj.id.value) || needtoRerender;
+    });
+  }
+  const trafficsignObjectSceneEntities = filteredTrafficSigns.map((obj) => {
+    staticObjectsRenderCache.lastRenderedObjects.add(obj.id.value);
+    return buildTrafficSignEntity(obj, "traffic_sign_", ROOT_FRAME, time);
+  });
+  staticObjectsRenderCache.lastRenderTime = time;
+  sceneEntities = sceneEntities.concat(trafficsignObjectSceneEntities);
+
   // Lane boundaries
   const laneBoundarySceneEntities = osiGroundTruth.lane_boundary.map((lane_boundary) => {
     return buildLaneBoundaryEntity(lane_boundary, ROOT_FRAME, time);
@@ -213,6 +279,8 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
 }
 
 export function activate(extensionContext: ExtensionContext): void {
+  preloadDynamicTextures();
+
   extensionContext.registerMessageConverter({
     fromSchemaName: "osi_3_msgs/osi_GroundTruth",
     toSchemaName: "foxglove.SceneUpdate",
@@ -229,7 +297,7 @@ export function activate(extensionContext: ExtensionContext): void {
         );
       }
       return {
-        deletions: buildSceneEntityDeletions(),
+        deletions: [],
         entities: sceneEntities,
       };
     },

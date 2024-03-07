@@ -32,3 +32,7 @@ export function ColorCode(color: string, alpha = 1.0): Color {
   const c = COLOR_MAP.get(color) ?? { r: 1, g: 1, b: 1 };
   return { r: c.r, g: c.g, b: c.b, a: alpha };
 }
+
+export function convertDataURIToBinary(dataURI: string): Uint8Array {
+  return Uint8Array.from(window.atob(dataURI.replace(/^data[^,]+,/, "")), (v) => v.charCodeAt(0));
+}

@@ -16,6 +16,10 @@ import {
   OsiLaneBoundaryBoundaryPoint,
 } from './types/osiGroundTruth';
 
+jest.mock('./trafficsigns', () => ({
+  preloadDynamicTextures: () => {}
+}), { virtual: true });
+
 describe('ASAM OSI Visualizer: Message Converter', () => {
   const mockRegisterMessageConverter = jest.fn();
   const mockExtensionContext = {} as ExtensionContext;
@@ -93,7 +97,8 @@ describe('ASAM OSI Visualizer: Message Converter', () => {
     },
     moving_object: [mockMovingObject],
     stationary_object: [mockStationaryObject],
-    lane_boundary: [mockLaneBoundary]
+    lane_boundary: [mockLaneBoundary],
+    traffic_sign: []
   };
   
   beforeEach(() => {
