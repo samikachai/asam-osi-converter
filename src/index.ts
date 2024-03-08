@@ -212,10 +212,8 @@ const staticObjectsRenderCache: {
 };
 
 export function determineTheNeedToRerender(lastRenderTime: Time, currentRenderTime: Time): boolean {
-  return (
-    lastRenderTime.sec > currentRenderTime.sec ||
-    (lastRenderTime.sec === currentRenderTime.sec && lastRenderTime.nsec > currentRenderTime.nsec)
-  );
+  const diff = (Number(currentRenderTime.sec) * 1000000000 + currentRenderTime.nsec) - (Number(lastRenderTime.sec) * 1000000000 + lastRenderTime.nsec);
+  return !(diff >= 0 && diff <= 10000000);
 }
 
 function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[] {
