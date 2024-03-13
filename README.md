@@ -16,16 +16,16 @@ The code should follow the coding guidelines of foxglove studio. This includes t
  - [x] Remove BMW specific transforms
  - [x] Remove unused converters (current code contains multiple converters)
  - [x] Move util functions from the common  directory to extension src 
- - [ ] Implement newest commits e.g. traffic sign visualisation
- - [ ] Add missing license files
- - [ ] Apply foxglove's basic prettier/typing/linting rules to existing code base
- - [ ] Adjust tests
+ - [x] Implement newest commits e.g. traffic sign visualisation
+ - [x] Add missing license files
+ - [x] Apply foxglove's basic prettier/typing/linting rules to existing code base
+ - [x] Adjust tests
  - [ ] Replace example data with data which is allowed to go public
 
 ## TODO CI/CD
 
  - [ ] Run tests/linting
- - [ ] Run build for win/mac/debian
+ - [ ] Run build of .foxe file
 
 
 ## Roadmap
