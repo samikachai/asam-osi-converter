@@ -1,5 +1,5 @@
 import { ExtensionContext } from '@foxglove/studio';
-import { activate, buildLaneBoundaryMetadata, buildVehicleMetadata } from './index';
+import { activate, buildLaneBoundaryMetadata, buildVehicleMetadata, determineTheNeedToRerender } from './index';
 import {
   OsiLaneBoundary,
   OsiLaneBoundaryType,
@@ -15,6 +15,10 @@ import {
   OsiBase,
   OsiLaneBoundaryBoundaryPoint,
 } from './types/osiGroundTruth';
+
+jest.mock('./trafficsigns', () => ({
+  preloadDynamicTextures: () => {}
+}), { virtual: true });
 
 describe('ASAM OSI Visualizer: Message Converter', () => {
   const mockRegisterMessageConverter = jest.fn();
@@ -93,7 +97,8 @@ describe('ASAM OSI Visualizer: Message Converter', () => {
     },
     moving_object: [mockMovingObject],
     stationary_object: [mockStationaryObject],
-    lane_boundary: [mockLaneBoundary]
+    lane_boundary: [mockLaneBoundary],
+    traffic_sign: []
   };
   
   beforeEach(() => {
@@ -153,35 +158,58 @@ describe('ASAM OSI Visualizer: Moving Objects', () => {
           value: OsiMovingObjectVehicleClassificationLightStateGenericLightState[input.light_state.head_light.value],
         }),
       ])
-      );
-    });
+    );
   });
+});
   
-  describe('ASAM OSI Visualizer: Lane Boundaries', () => {
-    it('builds metadata for lane boundaries', () => {
-      const mockLaneBoundaryPoint: OsiLaneBoundaryBoundaryPoint = {
-        position: { x: 0, y: 0, z: 0 },
-        width: 2.0,
-      };
-      const mockLaneBoundary: OsiLaneBoundary = {
-        id: { value: 123 },
-        classification: {
-          type: { value: OsiLaneBoundaryType.SOLID_LINE },
-        },
-        boundary_line: [mockLaneBoundaryPoint],
-      };
-      
-      expect(buildLaneBoundaryMetadata(mockLaneBoundary)).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            key: 'type',
-            value: OsiLaneBoundaryType[mockLaneBoundary.classification.type.value],
-          }),
-          expect.objectContaining({
-            key: 'width',
-            value: mockLaneBoundaryPoint.width.toString(),
-          }),
-        ])
-        );
-      });
-    });
+describe('ASAM OSI Visualizer: Lane Boundaries', () => {
+  it('builds metadata for lane boundaries', () => {
+    const mockLaneBoundaryPoint: OsiLaneBoundaryBoundaryPoint = {
+      position: { x: 0, y: 0, z: 0 },
+      width: 2.0,
+    };
+    const mockLaneBoundary: OsiLaneBoundary = {
+      id: { value: 123 },
+      classification: {
+        type: { value: OsiLaneBoundaryType.SOLID_LINE },
+      },
+      boundary_line: [mockLaneBoundaryPoint],
+    };
+    
+    expect(buildLaneBoundaryMetadata(mockLaneBoundary)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'type',
+          value: OsiLaneBoundaryType[mockLaneBoundary.classification.type.value],
+        }),
+        expect.objectContaining({
+          key: 'width',
+          value: mockLaneBoundaryPoint.width.toString(),
+        }),
+      ])
+    );
+  });
+});
+
+describe('OsiGroundTruthVisualizer: Static Objects Render Cache', () => {
+  it('determines if the last render time is greater then the current render time', () => {
+    const pastNsec = { sec: 0, nsec: 980000000 };
+    const futureNsec = { sec: 0, nsec: 990000000 };
+    const futureSec = { sec: 1, nsec: 0 };
+    expect(
+      determineTheNeedToRerender(futureNsec, pastNsec) // SHOULD rerender when the current render time is in the past relative to the last render time
+    ).toBe(true);
+    expect(
+      determineTheNeedToRerender(pastNsec, futureNsec) // SHOULD NOT rerender when the current render time is in the future (by less than 10000000 nanoseconds) relative to the last render time
+    ).toBe(false);
+    expect(
+      determineTheNeedToRerender(futureNsec, futureNsec) // SHOULD NOT rerender when the current render time is the same as the last render time
+    ).toBe(false);
+    expect(
+      determineTheNeedToRerender(futureNsec, futureSec) // SHOULD NOT rerender when the current render time is in the future (the next second but less than 10000000 nanoseconds) relative to the last render time
+    ).toBe(false);
+    expect(
+      determineTheNeedToRerender(pastNsec, futureSec) // SHOULD rerender when the current render time is in the future (by more than 10000000 nanoseconds) relative to the last render time
+    ).toBe(true);
+  })
+});

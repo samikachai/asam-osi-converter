@@ -1,4 +1,12 @@
-import { LinePrimitive, LineType, CubePrimitive, Color, Point3, Point2 } from "@foxglove/schemas";
+import {
+  LinePrimitive,
+  LineType,
+  CubePrimitive,
+  Color,
+  Point3,
+  Point2,
+  ModelPrimitive,
+} from "@foxglove/schemas";
 
 import { eulerToQuaternion } from "./geometry";
 
@@ -141,5 +149,47 @@ export function objectToCubePrimitive(
       z: height,
     },
     color,
+  };
+}
+
+export function objectToModelPrimitive(
+  x: number,
+  y: number,
+  z: number,
+  theta: number,
+  x_reference_offset: number,
+  y_reference_offset: number,
+  width: number,
+  length: number,
+  height: number,
+  color: Color,
+  data: Uint8Array,
+): ModelPrimitive {
+  const sin_theta = Math.sin(theta);
+  const cos_theta = Math.cos(theta);
+
+  // rotate
+  const processed_x = x + cos_theta * x_reference_offset - sin_theta * y_reference_offset;
+  const processed_y = y + sin_theta * x_reference_offset + cos_theta * y_reference_offset;
+
+  return {
+    pose: {
+      position: {
+        x: processed_x,
+        y: processed_y,
+        z,
+      },
+      orientation: eulerToQuaternion(0, 0, theta + Math.PI),
+    },
+    scale: {
+      x: length,
+      y: width,
+      z: height,
+    },
+    color,
+    override_color: false,
+    url: "",
+    media_type: "model/gltf-binary",
+    data,
   };
 }
