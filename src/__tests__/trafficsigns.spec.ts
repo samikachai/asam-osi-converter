@@ -1,4 +1,4 @@
-import { buildTrafficSignModel, preloadDynamicTextures } from "./index";
+import { buildTrafficSignModel, preloadDynamicTextures } from "../trafficsigns";
 import { OsiTrafficSignMainSign } from "../types/osiGroundTruth";
 
 const mockImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -7,7 +7,7 @@ const mockImagesMain = {
     1: mockImage
 };
 const mockImagesSupp = {};
-jest.mock('./images', () => ({
+jest.mock('../trafficsigns/images', () => ({
     get main() {
         return mockImagesMain;
     },

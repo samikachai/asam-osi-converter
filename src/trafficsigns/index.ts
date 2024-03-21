@@ -1,4 +1,6 @@
 import { ModelPrimitive } from "@foxglove/schemas";
+import { convertDataURIToBinary } from "@utils/helper";
+import { objectToModelPrimitive } from "@utils/marker";
 
 import * as geometries from "./geometries";
 import images from "./images";
@@ -9,8 +11,6 @@ import {
   OsiTrafficSignMainSign,
   OsiTrafficSignSupplementarySign,
 } from "../types/osiGroundTruth";
-import { convertDataURIToBinary } from "../utils/helper";
-import { objectToModelPrimitive } from "../utils/marker";
 
 type TrafficSignCategory = keyof typeof images;
 

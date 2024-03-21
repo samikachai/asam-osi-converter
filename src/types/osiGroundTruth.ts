@@ -79,6 +79,64 @@ export enum OsiLaneBoundaryType {
   STRUCTURE = 13,
 }
 
+export enum StationaryObjectColor {
+  UNKNOWN = 0,
+  OTHER = 1,
+  YELLOW = 2,
+  GREEN = 3,
+  BLUE = 4,
+  VIOLET = 5,
+  RED = 6,
+  ORANGE = 7,
+  BLACK = 8,
+  GREY = 9,
+  WHITE = 10,
+}
+
+export enum StationaryObjectType {
+  UNKNOWN = 0,
+  OTHER = 1,
+  BRIDGE = 2,
+  BUILDING = 3,
+  POLE = 4,
+  PYLON = 5,
+  DELINEATOR = 6,
+  TREE = 7,
+  BARRIER = 8,
+  VEGETATION = 9,
+  CURBSTONE = 10,
+  WALL = 11,
+  VERTICAL_STRUCTURE = 12,
+  RECTANGULAR_STRUCTURE = 13,
+  OVERHEAD_STRUCTURE = 14,
+  REFLECTIVE_STRUCTURE = 15,
+  CONSTRUCTION_SITE_ELEMENT = 16,
+  SPEED_BUMP = 17,
+  EMITTING_STRUCTURE = 18,
+}
+
+export enum StationaryObjectMaterial {
+  UNKNOWN = 0,
+  OTHER = 1,
+  WOOD = 2,
+  PLASTIC = 3,
+  CONCRETE = 4,
+  METAL = 5,
+  STONE = 6,
+  GLAS = 7,
+  MUD = 8,
+}
+
+export enum StationaryObjectDensity {
+  UNKNOWN = 0,
+  OTHER = 1,
+  SOLID = 2,
+  SMALL_MESH = 3,
+  MEDIAN_MESH = 4,
+  LARGE_MESH = 5,
+  OPEN = 6,
+}
+
 export interface OsiTimestamp {
   seconds: number;
   nanos: number;
@@ -137,6 +195,23 @@ export interface OsiMovingObject extends OsiObject {
   vehicle_classification: OsiMovingObjectVehicleClassification;
 }
 
+export interface OsiStationaryObject extends OsiObject {
+  classification: {
+    color: {
+      value: StationaryObjectColor;
+    };
+    type: {
+      value: StationaryObjectType;
+    };
+    material: {
+      value: StationaryObjectMaterial;
+    };
+    density: {
+      value: StationaryObjectDensity;
+    };
+  };
+}
+
 export interface OsiLaneBoundaryBoundaryPoint {
   position: OsiVector3d;
   width: number;
@@ -189,7 +264,7 @@ export interface OsiTrafficSignSupplementarySignClassification {
 export interface OsiGroundTruth {
   timestamp: OsiTimestamp;
   host_vehicle_id: OsiIdentifier;
-  stationary_object: OsiObject[];
+  stationary_object: OsiStationaryObject[];
   moving_object: OsiMovingObject[];
   lane_boundary: OsiLaneBoundary[];
   traffic_sign: OsiTrafficSign[];
