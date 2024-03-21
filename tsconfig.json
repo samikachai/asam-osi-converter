@@ -4,7 +4,7 @@
   "include": ["./src/**/*"],
   "exclude": ["./src/**/*.test.ts"],
   "compilerOptions": {
-    "rootDir": "./src",
+    // "rootDirs": "./src",
     "outDir": "./dist",
     "lib": ["dom"],
 
@@ -22,6 +22,10 @@
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@common-types/*": ["./common/types/*"],
+      "@utils/*": ["./common/utils/*"]
+    }
   }
 }

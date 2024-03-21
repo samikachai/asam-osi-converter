@@ -1,5 +1,5 @@
 import { ExtensionContext } from '@foxglove/studio';
-import { activate, buildLaneBoundaryMetadata, buildVehicleMetadata, determineTheNeedToRerender } from './index';
+import { activate, buildLaneBoundaryMetadata, buildVehicleMetadata, determineTheNeedToRerender } from '../index';
 import {
   OsiLaneBoundary,
   OsiLaneBoundaryType,
@@ -9,18 +9,18 @@ import {
   OsiMovingObjectVehicleClassificationLightStateIndicatorState,
   OsiGroundTruth,
   OsiMovingObject,
-  OsiObject,
   OsiMovingObjectType,
   OsiMovingObjectVehicleClassification,
   OsiBase,
   OsiLaneBoundaryBoundaryPoint,
-} from './types/osiGroundTruth';
+  OsiStationaryObject,
+} from '../types/osiGroundTruth';
 
-jest.mock('./trafficsigns', () => ({
+jest.mock('../trafficsigns', () => ({
   preloadDynamicTextures: () => {}
 }), { virtual: true });
 
-describe('ASAM OSI Visualizer: Message Converter', () => {
+describe('OSI Visualizer: Message Converter', () => {
   const mockRegisterMessageConverter = jest.fn();
   const mockExtensionContext = {} as ExtensionContext;
   const mockBase: OsiBase = {
@@ -63,11 +63,25 @@ describe('ASAM OSI Visualizer: Message Converter', () => {
       light_state: {}
     }
   };
-  const mockStationaryObject: OsiObject = {
+  const mockStationaryObject: OsiStationaryObject = {
     id: {
       value: 1
     },
-    base: mockBase
+    base: mockBase,
+    classification: {
+      color: { 
+        value: 0 
+      },
+      type: { 
+        value: 0 
+      },
+      material: { 
+        value: 0 
+      },
+      density: { 
+        value: 0
+      }
+    }
   };
   const mockLaneBoundary: OsiLaneBoundary = {
     id: {
@@ -106,12 +120,12 @@ describe('ASAM OSI Visualizer: Message Converter', () => {
     mockRegisterMessageConverter.mockClear();
   });
   
-  it('registers a message converter', () => {
+  it('registers the message converters', () => {
     activate(mockExtensionContext);
-    expect(mockRegisterMessageConverter).toHaveBeenCalledTimes(1);
+    expect(mockRegisterMessageConverter).toHaveBeenCalledTimes(4);
   });
   
-  it('converts a simple message', () => {
+  it('converts a simple message { fromSchemaName: osi_3_msgs/osi_GroundTruth toSchemaName: foxglove.SceneUpdate }', () => {
     activate(mockExtensionContext);
     const messageConverterArgs = mockRegisterMessageConverter.mock.calls[0][0];
     const result = messageConverterArgs.converter(mockMessageData);
@@ -120,7 +134,7 @@ describe('ASAM OSI Visualizer: Message Converter', () => {
   });
 });
 
-describe('ASAM OSI Visualizer: Moving Objects', () => {
+describe('OSI Visualizer: Moving Objects', () => {
   it('builds metadata  for vehicle moving objects', () => {
     const input: OsiMovingObjectVehicleClassification = {
       type: {
@@ -146,23 +160,23 @@ describe('ASAM OSI Visualizer: Moving Objects', () => {
         }),
         expect.objectContaining({
           key: 'light_state.indicator_state',
-          value: OsiMovingObjectVehicleClassificationLightStateIndicatorState[input.light_state.indicator_state.value],
+          value: OsiMovingObjectVehicleClassificationLightStateIndicatorState[input.light_state.indicator_state!.value],
         }),
         expect.objectContaining({
           key: 'light_state.brake_light_state',
           value:
-          OsiMovingObjectVehicleClassificationLightStateBrakeLightState[input.light_state.brake_light_state.value],
+          OsiMovingObjectVehicleClassificationLightStateBrakeLightState[input.light_state.brake_light_state!.value],
         }),
         expect.objectContaining({
           key: 'light_state.head_light',
-          value: OsiMovingObjectVehicleClassificationLightStateGenericLightState[input.light_state.head_light.value],
+          value: OsiMovingObjectVehicleClassificationLightStateGenericLightState[input.light_state.head_light!.value],
         }),
       ])
     );
   });
 });
   
-describe('ASAM OSI Visualizer: Lane Boundaries', () => {
+describe('OSI Visualizer: Lane Boundaries', () => {
   it('builds metadata for lane boundaries', () => {
     const mockLaneBoundaryPoint: OsiLaneBoundaryBoundaryPoint = {
       position: { x: 0, y: 0, z: 0 },

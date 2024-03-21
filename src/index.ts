@@ -1,13 +1,14 @@
-import type { Color } from "@foxglove/schemas";
-import { LinePrimitive, KeyValuePair, Vector2 } from "@foxglove/schemas";
-import { Time } from "@foxglove/schemas/schemas/typescript/Time";
-import { ExtensionContext } from "@foxglove/studio";
-
+import { LineType, type Color, type FrameTransform, type KeyValuePair, type LinePrimitive, type Point3, type Quaternion, type Vector2, type Vector3 } from "@foxglove/schemas";
+import { ExtensionContext, Time } from "@foxglove/studio";
+import { DeepPartial } from "ts-essentials";
 import {
   HOST_OBJECT_COLOR,
   LANE_BOUNDARY_COLOR,
   MOVING_OBJECT_COLOR,
   STATIONARY_OBJECT_COLOR,
+  STATIONARY_OBJECT_TYPE,
+  STATIONARY_OBJECT_MATERIAL,
+  STATIONARY_OBJECT_DENSITY
 } from "./config";
 import { preloadDynamicTextures, buildTrafficSignModel } from "./trafficsigns";
 import {
@@ -17,6 +18,7 @@ import {
   OsiLaneBoundary,
   OsiLaneBoundaryType,
   OsiMovingObjectType,
+  OsiStationaryObject,
   OsiMovingObjectVehicleClassification,
   OsiMovingObjectVehicleClassificationType,
   OsiMovingObjectVehicleClassificationLightStateBrakeLightState,
@@ -25,12 +27,15 @@ import {
   OsiIdentifier,
   OsiTrafficSign,
 } from "./types/osiGroundTruth";
+import { OsiDetectedLaneBoundary, OsiLaneBoundaryBoundaryPoint, OsiSensorData } from "./types/osiSensorData";
 import {
   pointListToLinePrimitive,
   pointListToDashedLinePrimitive,
   objectToCubePrimitive,
-} from "./utils/marker";
-import { PartialSceneEntity } from "./utils/scene";
+} from "@utils/marker";
+import { PartialSceneEntity } from "@utils/scene";
+import { eulerToQuaternion, pointRotationByQuaternion } from "@utils/geometry";
+import { ColorCode } from "@utils/helper";
 
 const ROOT_FRAME = "<root>";
 
@@ -196,6 +201,29 @@ export function buildLaneBoundaryMetadata(lane_boundary: OsiLaneBoundary): KeyVa
   return metadata;
 }
 
+export function buildStationaryMetadata(obj: OsiStationaryObject): KeyValuePair[] {
+  const metadata: KeyValuePair[] = [
+    {
+      key: 'density',
+      value: STATIONARY_OBJECT_DENSITY[obj.classification.density.value] || STATIONARY_OBJECT_DENSITY[0],
+    },
+    {
+      key: 'material',
+      value: STATIONARY_OBJECT_MATERIAL[obj.classification.material.value] || STATIONARY_OBJECT_MATERIAL[0],
+    },
+    {
+      key: 'color',
+      value:  STATIONARY_OBJECT_COLOR[obj.classification.color.value].name || STATIONARY_OBJECT_COLOR[0].name,
+    },
+    {
+      key: 'type',
+      value: STATIONARY_OBJECT_TYPE[obj.classification.type.value] || STATIONARY_OBJECT_TYPE[0],
+    },
+  ];
+
+  return metadata;
+}
+
 function osiTimestampToTime(time: OsiTimestamp): Time {
   return {
     sec: time.seconds,
@@ -245,8 +273,10 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
   sceneEntities = sceneEntities.concat(movingObjectSceneEntities);
 
   // Stationary objects
-  const stationaryObjectSceneEntities = osiGroundTruth.stationary_object.map((obj) => {
-    return buildObjectEntity(obj, STATIONARY_OBJECT_COLOR, "stationary_object_", ROOT_FRAME, time);
+  const stationaryObjectSceneEntities = osiGroundTruth.stationary_object.map((obj: OsiStationaryObject) => {
+    const objectColor = STATIONARY_OBJECT_COLOR[obj.classification.color.value].code || STATIONARY_OBJECT_COLOR[0].code;
+    const metadata = buildStationaryMetadata(obj);
+    return buildObjectEntity(obj, objectColor, 'stationary_object_', ROOT_FRAME, time, metadata);
   });
   sceneEntities = sceneEntities.concat(stationaryObjectSceneEntities);
 
@@ -276,6 +306,75 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
   return sceneEntities;
 }
 
+export function frameTransformator(osiGroundTruth: OsiGroundTruth): FrameTransform {
+  const hostIdentifier = osiGroundTruth.host_vehicle_id.value;
+  const hostObject = osiGroundTruth.moving_object.find((obj) => {
+    return obj.id.value == hostIdentifier;
+  })!;
+  const rollAngle = hostObject.base.orientation.roll;
+  const pitchAngle = hostObject.base.orientation.pitch;
+  const yawAngle = -hostObject.base.orientation.yaw;
+  const hostObjectBasePosition: Vector3 = {
+    x: -hostObject.base.position.x,
+    y: -hostObject.base.position.y,
+    z: -hostObject.base.position.z,
+  };
+  const quaternion: Quaternion = eulerToQuaternion(rollAngle, pitchAngle, yawAngle);
+  const translationResult = pointRotationByQuaternion(hostObjectBasePosition, quaternion);
+  translationResult.x = translationResult.x - hostObject.vehicle_attributes.bbcenter_to_rear.x;
+  translationResult.y = translationResult.y - hostObject.vehicle_attributes.bbcenter_to_rear.y;
+  translationResult.z = 0;
+  return {
+    timestamp: osiTimestampToTime(osiGroundTruth.timestamp),
+    parent_frame_id: 'ego_vehicle_rear_axis',
+    child_frame_id: '<root>',
+    translation: translationResult,
+    rotation: eulerToQuaternion(0, 0, yawAngle),
+  };
+}
+
+function buildGroundTruthSceneEntities(osiSensorData: OsiSensorData): PartialSceneEntity[] {
+  const ToPoint3 = (boundary: OsiLaneBoundaryBoundaryPoint): Point3 => {
+    return { x: boundary.position.x, y: boundary.position.y, z: 0 };
+  };
+  const ToLinePrimitive = (points: Point3[], thickness: number): DeepPartial<LinePrimitive> => {
+    return {
+      type: LineType.LINE_STRIP,
+      pose: {
+        position: { x: 0, y: 0, z: 0 },
+        orientation: { x: 0, y: 0, z: 0, w: -10 },
+      },
+      thickness: thickness,
+      scale_invariant: true,
+      points: points,
+      color: ColorCode('green', 1),
+      indices: [],
+    };
+  };
+
+  const makeLinePrimitive = (lane_boundary: OsiDetectedLaneBoundary, thickness: number): DeepPartial<LinePrimitive> => {
+    const boundary_line: any[] = Array.from(lane_boundary.boundary_line);
+    return ToLinePrimitive(boundary_line.map(ToPoint3), thickness);
+  };
+
+  const makePrimitiveLines = (
+    lane_boundary: OsiDetectedLaneBoundary[],
+    thickness: number
+  ): DeepPartial<LinePrimitive>[] => {
+    return lane_boundary.map((b) => makeLinePrimitive(b, thickness));
+  };
+
+  const road_output_scene_update: PartialSceneEntity = {
+    timestamp: { sec: osiSensorData.timestamp.seconds, nsec: osiSensorData.timestamp.nanos },
+    frame_id: 'ego_vehicle_rear_axis',
+    id: 'ra_ground_truth',
+    lifetime: { sec: 0, nsec: 0 },
+    frame_locked: true,
+    lines: makePrimitiveLines(osiSensorData.lane_boundary, 1.0),
+  };
+  return [road_output_scene_update];
+}
+
 export function activate(extensionContext: ExtensionContext): void {
   preloadDynamicTextures();
 
@@ -283,7 +382,6 @@ export function activate(extensionContext: ExtensionContext): void {
     fromSchemaName: "osi_3_msgs/osi_GroundTruth",
     toSchemaName: "foxglove.SceneUpdate",
     converter: (osiGroundTruth: OsiGroundTruth) => {
-      console.log("Converting OSI Groundtruth entities");
       let sceneEntities: PartialSceneEntity[] = [];
 
       try {
@@ -298,6 +396,70 @@ export function activate(extensionContext: ExtensionContext): void {
         deletions: [],
         entities: sceneEntities,
       };
+    },
+  });
+
+  extensionContext.registerMessageConverter({
+    fromSchemaName: 'astas_osi3.GroundTruth',
+    toSchemaName: 'foxglove.SceneUpdate',
+    converter: (osiGroundTruth: OsiGroundTruth) => {
+      let sceneEntities: PartialSceneEntity[] = [];
+
+      try {
+        sceneEntities = buildSceneEntities(osiGroundTruth);
+      } catch (error) {
+        console.error(
+          'OsiGroundTruthVisualizer: Error during message conversion:\n' +
+            error +
+            '\nSkipping message! (Input message not compatible?)'
+        );
+      }
+
+      return {
+        deletions: [],
+        entities: sceneEntities,
+      };
+    },
+  });
+
+  extensionContext.registerMessageConverter({
+    fromSchemaName: 'osi_3_msgs/osi_SensorData',
+    toSchemaName: 'foxglove.SceneUpdate',
+    converter: (osiSensorData: OsiSensorData) => {
+      let sceneEntities: PartialSceneEntity[] = [];
+
+      try {
+        sceneEntities = buildGroundTruthSceneEntities(osiSensorData);
+      } catch (error) {
+        console.error(
+          'OsiGroundTruthVisualizer: Error during message conversion:\n' +
+            error +
+            '\nSkipping message! (Input message not compatible?)'
+        );
+      }
+      return {
+        deletions: [],
+        entities: sceneEntities,
+      };
+    },
+  });
+
+  extensionContext.registerMessageConverter({
+    fromSchemaName: 'osi_3_msgs/osi_GroundTruth',
+    toSchemaName: 'foxglove.FrameTransform',
+    converter: (message: OsiGroundTruth) => {
+      console.debug('Converting osi_3_msgs/osi_GroundTruth FrameTransform');
+      let transforms =  {} as FrameTransform;
+      try {
+        transforms = frameTransformator(message);
+      } catch (error) {
+        console.error(
+          'DetectionListForSensors: Error during FrameTransform message conversion:\n' +
+            error +
+            '\nSkipping message! (Input message not compatible?)'
+        );
+      }
+      return transforms;
     },
   });
 }
