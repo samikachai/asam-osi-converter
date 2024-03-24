@@ -20,11 +20,30 @@ export function invertQuaternion(quaternion: Quaternion): Quaternion {
   return { x: -quaternion.x, y: -quaternion.y, z: -quaternion.z, w: quaternion.w };
 }
 
-export function quaternionMultiplication(quaternion_lhs: Quaternion, quaternion_rhs: Quaternion): Quaternion {
-  const w = quaternion_rhs.w * quaternion_lhs.w - quaternion_rhs.x * quaternion_lhs.x - quaternion_rhs.y * quaternion_lhs.y - quaternion_rhs.z * quaternion_lhs.z;
-  const x = quaternion_rhs.w * quaternion_lhs.x + quaternion_rhs.x * quaternion_lhs.w - quaternion_rhs.y * quaternion_lhs.z + quaternion_rhs.z * quaternion_lhs.y;
-  const y = quaternion_rhs.w * quaternion_lhs.y + quaternion_rhs.x * quaternion_lhs.z + quaternion_rhs.y * quaternion_lhs.w - quaternion_rhs.z * quaternion_lhs.x;
-  const z = quaternion_rhs.w * quaternion_lhs.z - quaternion_rhs.x * quaternion_lhs.y + quaternion_rhs.y * quaternion_lhs.x + quaternion_rhs.z * quaternion_lhs.w;
+export function quaternionMultiplication(
+  quaternion_lhs: Quaternion,
+  quaternion_rhs: Quaternion,
+): Quaternion {
+  const w =
+    quaternion_rhs.w * quaternion_lhs.w -
+    quaternion_rhs.x * quaternion_lhs.x -
+    quaternion_rhs.y * quaternion_lhs.y -
+    quaternion_rhs.z * quaternion_lhs.z;
+  const x =
+    quaternion_rhs.w * quaternion_lhs.x +
+    quaternion_rhs.x * quaternion_lhs.w -
+    quaternion_rhs.y * quaternion_lhs.z +
+    quaternion_rhs.z * quaternion_lhs.y;
+  const y =
+    quaternion_rhs.w * quaternion_lhs.y +
+    quaternion_rhs.x * quaternion_lhs.z +
+    quaternion_rhs.y * quaternion_lhs.w -
+    quaternion_rhs.z * quaternion_lhs.x;
+  const z =
+    quaternion_rhs.w * quaternion_lhs.z -
+    quaternion_rhs.x * quaternion_lhs.y +
+    quaternion_rhs.y * quaternion_lhs.x +
+    quaternion_rhs.z * quaternion_lhs.w;
   return { x, y, z, w };
 }
 
