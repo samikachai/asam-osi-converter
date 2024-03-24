@@ -1,6 +1,25 @@
-import { LineType, type Color, type FrameTransform, type KeyValuePair, type LinePrimitive, type Point3, type Quaternion, type Vector2, type Vector3 } from "@foxglove/schemas";
+import {
+  LineType,
+  type Color,
+  type FrameTransform,
+  type KeyValuePair,
+  type LinePrimitive,
+  type Point3,
+  type Quaternion,
+  type Vector2,
+  type Vector3,
+} from "@foxglove/schemas";
 import { ExtensionContext, Time } from "@foxglove/studio";
+import { eulerToQuaternion, pointRotationByQuaternion } from "@utils/geometry";
+import { ColorCode } from "@utils/helper";
+import {
+  pointListToLinePrimitive,
+  pointListToDashedLinePrimitive,
+  objectToCubePrimitive,
+} from "@utils/marker";
+import { PartialSceneEntity } from "@utils/scene";
 import { DeepPartial } from "ts-essentials";
+
 import {
   HOST_OBJECT_COLOR,
   LANE_BOUNDARY_COLOR,
@@ -8,7 +27,7 @@ import {
   STATIONARY_OBJECT_COLOR,
   STATIONARY_OBJECT_TYPE,
   STATIONARY_OBJECT_MATERIAL,
-  STATIONARY_OBJECT_DENSITY
+  STATIONARY_OBJECT_DENSITY,
 } from "./config";
 import { preloadDynamicTextures, buildTrafficSignModel } from "./trafficsigns";
 import {
@@ -27,15 +46,11 @@ import {
   OsiIdentifier,
   OsiTrafficSign,
 } from "./types/osiGroundTruth";
-import { OsiDetectedLaneBoundary, OsiLaneBoundaryBoundaryPoint, OsiSensorData } from "./types/osiSensorData";
 import {
-  pointListToLinePrimitive,
-  pointListToDashedLinePrimitive,
-  objectToCubePrimitive,
-} from "@utils/marker";
-import { PartialSceneEntity } from "@utils/scene";
-import { eulerToQuaternion, pointRotationByQuaternion } from "@utils/geometry";
-import { ColorCode } from "@utils/helper";
+  OsiDetectedLaneBoundary,
+  OsiLaneBoundaryBoundaryPoint,
+  OsiSensorData,
+} from "./types/osiSensorData";
 
 const ROOT_FRAME = "<root>";
 
@@ -204,19 +219,24 @@ export function buildLaneBoundaryMetadata(lane_boundary: OsiLaneBoundary): KeyVa
 export function buildStationaryMetadata(obj: OsiStationaryObject): KeyValuePair[] {
   const metadata: KeyValuePair[] = [
     {
-      key: 'density',
-      value: STATIONARY_OBJECT_DENSITY[obj.classification.density.value] || STATIONARY_OBJECT_DENSITY[0],
+      key: "density",
+      value:
+        STATIONARY_OBJECT_DENSITY[obj.classification.density.value] || STATIONARY_OBJECT_DENSITY[0],
     },
     {
-      key: 'material',
-      value: STATIONARY_OBJECT_MATERIAL[obj.classification.material.value] || STATIONARY_OBJECT_MATERIAL[0],
+      key: "material",
+      value:
+        STATIONARY_OBJECT_MATERIAL[obj.classification.material.value] ||
+        STATIONARY_OBJECT_MATERIAL[0],
     },
     {
-      key: 'color',
-      value:  STATIONARY_OBJECT_COLOR[obj.classification.color.value].name || STATIONARY_OBJECT_COLOR[0].name,
+      key: "color",
+      value:
+        STATIONARY_OBJECT_COLOR[obj.classification.color.value].name ||
+        STATIONARY_OBJECT_COLOR[0].name,
     },
     {
-      key: 'type',
+      key: "type",
       value: STATIONARY_OBJECT_TYPE[obj.classification.type.value] || STATIONARY_OBJECT_TYPE[0],
     },
   ];
@@ -240,7 +260,10 @@ const staticObjectsRenderCache: {
 };
 
 export function determineTheNeedToRerender(lastRenderTime: Time, currentRenderTime: Time): boolean {
-  const diff = (Number(currentRenderTime.sec) * 1000000000 + currentRenderTime.nsec) - (Number(lastRenderTime.sec) * 1000000000 + lastRenderTime.nsec);
+  const diff =
+    Number(currentRenderTime.sec) * 1000000000 +
+    currentRenderTime.nsec -
+    (Number(lastRenderTime.sec) * 1000000000 + lastRenderTime.nsec);
   return !(diff >= 0 && diff <= 10000000);
 }
 
@@ -248,7 +271,7 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
   let sceneEntities: PartialSceneEntity[] = [];
   const time: Time = osiTimestampToTime(osiGroundTruth.timestamp);
   const needtoRerender =
-    staticObjectsRenderCache.lastRenderTime !== undefined &&
+    staticObjectsRenderCache.lastRenderTime != undefined &&
     determineTheNeedToRerender(staticObjectsRenderCache.lastRenderTime, time);
 
   // Moving objects
@@ -273,11 +296,13 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
   sceneEntities = sceneEntities.concat(movingObjectSceneEntities);
 
   // Stationary objects
-  const stationaryObjectSceneEntities = osiGroundTruth.stationary_object.map((obj: OsiStationaryObject) => {
-    const objectColor = STATIONARY_OBJECT_COLOR[obj.classification.color.value].code || STATIONARY_OBJECT_COLOR[0].code;
-    const metadata = buildStationaryMetadata(obj);
-    return buildObjectEntity(obj, objectColor, 'stationary_object_', ROOT_FRAME, time, metadata);
-  });
+  const stationaryObjectSceneEntities = osiGroundTruth.stationary_object.map(
+    (obj: OsiStationaryObject) => {
+      const objectColor = STATIONARY_OBJECT_COLOR[obj.classification.color.value].code;
+      const metadata = buildStationaryMetadata(obj);
+      return buildObjectEntity(obj, objectColor, "stationary_object_", ROOT_FRAME, time, metadata);
+    },
+  );
   sceneEntities = sceneEntities.concat(stationaryObjectSceneEntities);
 
   // Traffic Sign objects
@@ -287,7 +312,7 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
     filteredTrafficSigns = osiGroundTruth.traffic_sign;
   } else {
     filteredTrafficSigns = osiGroundTruth.traffic_sign.filter((obj) => {
-      return !staticObjectsRenderCache.lastRenderedObjects.has(obj.id.value) || needtoRerender;
+      return !staticObjectsRenderCache.lastRenderedObjects.has(obj.id.value);
     });
   }
   const trafficsignObjectSceneEntities = filteredTrafficSigns.map((obj) => {
@@ -309,7 +334,7 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
 export function frameTransformator(osiGroundTruth: OsiGroundTruth): FrameTransform {
   const hostIdentifier = osiGroundTruth.host_vehicle_id.value;
   const hostObject = osiGroundTruth.moving_object.find((obj) => {
-    return obj.id.value == hostIdentifier;
+    return obj.id.value === hostIdentifier;
   })!;
   const rollAngle = hostObject.base.orientation.roll;
   const pitchAngle = hostObject.base.orientation.pitch;
@@ -326,8 +351,8 @@ export function frameTransformator(osiGroundTruth: OsiGroundTruth): FrameTransfo
   translationResult.z = 0;
   return {
     timestamp: osiTimestampToTime(osiGroundTruth.timestamp),
-    parent_frame_id: 'ego_vehicle_rear_axis',
-    child_frame_id: '<root>',
+    parent_frame_id: "ego_vehicle_rear_axis",
+    child_frame_id: "<root>",
     translation: translationResult,
     rotation: eulerToQuaternion(0, 0, yawAngle),
   };
@@ -344,30 +369,32 @@ function buildGroundTruthSceneEntities(osiSensorData: OsiSensorData): PartialSce
         position: { x: 0, y: 0, z: 0 },
         orientation: { x: 0, y: 0, z: 0, w: -10 },
       },
-      thickness: thickness,
+      thickness,
       scale_invariant: true,
-      points: points,
-      color: ColorCode('green', 1),
+      points,
+      color: ColorCode("green", 1),
       indices: [],
     };
   };
 
-  const makeLinePrimitive = (lane_boundary: OsiDetectedLaneBoundary, thickness: number): DeepPartial<LinePrimitive> => {
-    const boundary_line: any[] = Array.from(lane_boundary.boundary_line);
-    return ToLinePrimitive(boundary_line.map(ToPoint3), thickness);
+  const makeLinePrimitive = (
+    lane_boundary: OsiDetectedLaneBoundary,
+    thickness: number,
+  ): DeepPartial<LinePrimitive> => {
+    return ToLinePrimitive(lane_boundary.boundary_line.map(ToPoint3), thickness);
   };
 
   const makePrimitiveLines = (
     lane_boundary: OsiDetectedLaneBoundary[],
-    thickness: number
+    thickness: number,
   ): DeepPartial<LinePrimitive>[] => {
     return lane_boundary.map((b) => makeLinePrimitive(b, thickness));
   };
 
   const road_output_scene_update: PartialSceneEntity = {
     timestamp: { sec: osiSensorData.timestamp.seconds, nsec: osiSensorData.timestamp.nanos },
-    frame_id: 'ego_vehicle_rear_axis',
-    id: 'ra_ground_truth',
+    frame_id: "ego_vehicle_rear_axis",
+    id: "ra_ground_truth",
     lifetime: { sec: 0, nsec: 0 },
     frame_locked: true,
     lines: makePrimitiveLines(osiSensorData.lane_boundary, 1.0),
@@ -400,8 +427,8 @@ export function activate(extensionContext: ExtensionContext): void {
   });
 
   extensionContext.registerMessageConverter({
-    fromSchemaName: 'astas_osi3.GroundTruth',
-    toSchemaName: 'foxglove.SceneUpdate',
+    fromSchemaName: "astas_osi3.GroundTruth",
+    toSchemaName: "foxglove.SceneUpdate",
     converter: (osiGroundTruth: OsiGroundTruth) => {
       let sceneEntities: PartialSceneEntity[] = [];
 
@@ -409,9 +436,8 @@ export function activate(extensionContext: ExtensionContext): void {
         sceneEntities = buildSceneEntities(osiGroundTruth);
       } catch (error) {
         console.error(
-          'OsiGroundTruthVisualizer: Error during message conversion:\n' +
-            error +
-            '\nSkipping message! (Input message not compatible?)'
+          "OsiGroundTruthVisualizer: Error during message conversion:\n%s\nSkipping message! (Input message not compatible?)",
+          error,
         );
       }
 
@@ -423,8 +449,8 @@ export function activate(extensionContext: ExtensionContext): void {
   });
 
   extensionContext.registerMessageConverter({
-    fromSchemaName: 'osi_3_msgs/osi_SensorData',
-    toSchemaName: 'foxglove.SceneUpdate',
+    fromSchemaName: "osi_3_msgs/osi_SensorData",
+    toSchemaName: "foxglove.SceneUpdate",
     converter: (osiSensorData: OsiSensorData) => {
       let sceneEntities: PartialSceneEntity[] = [];
 
@@ -432,9 +458,8 @@ export function activate(extensionContext: ExtensionContext): void {
         sceneEntities = buildGroundTruthSceneEntities(osiSensorData);
       } catch (error) {
         console.error(
-          'OsiGroundTruthVisualizer: Error during message conversion:\n' +
-            error +
-            '\nSkipping message! (Input message not compatible?)'
+          "OsiGroundTruthVisualizer: Error during message conversion:\n%s\nSkipping message! (Input message not compatible?)",
+          error,
         );
       }
       return {
@@ -445,18 +470,16 @@ export function activate(extensionContext: ExtensionContext): void {
   });
 
   extensionContext.registerMessageConverter({
-    fromSchemaName: 'osi_3_msgs/osi_GroundTruth',
-    toSchemaName: 'foxglove.FrameTransform',
+    fromSchemaName: "osi_3_msgs/osi_GroundTruth",
+    toSchemaName: "foxglove.FrameTransform",
     converter: (message: OsiGroundTruth) => {
-      console.debug('Converting osi_3_msgs/osi_GroundTruth FrameTransform');
-      let transforms =  {} as FrameTransform;
+      let transforms = {} as FrameTransform;
       try {
         transforms = frameTransformator(message);
       } catch (error) {
         console.error(
-          'DetectionListForSensors: Error during FrameTransform message conversion:\n' +
-            error +
-            '\nSkipping message! (Input message not compatible?)'
+          "DetectionListForSensors: Error during FrameTransform message conversion:\n%s\nSkipping message! (Input message not compatible?)",
+          error,
         );
       }
       return transforms;
