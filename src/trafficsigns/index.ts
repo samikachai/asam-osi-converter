@@ -52,7 +52,7 @@ export const buildTrafficSignModel = (
     item.base.dimension.length,
     item.base.dimension.height,
     { r: 0, g: 0, b: 0, a: 0 },
-    modelSignCacheMap["main"].get(mapKey)!,
+    modelSignCacheMap[category].get(mapKey)!,
   );
 };
 
@@ -112,7 +112,7 @@ const getTextureMapKey = (
     | OsiTrafficSignMainSignClassification
     | OsiTrafficSignSupplementarySignClassification,
 ): string => {
-  return `${classification.type.value}|${classification.value.value};`;
+  return `${classification.type.value}|${classification.value.value}`;
 };
 
 const getImage = (file: string): HTMLImageElement => {
