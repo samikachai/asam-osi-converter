@@ -8,6 +8,7 @@ import {
   StationaryObjectType,
   StationaryObjectMaterial,
   StationaryObjectDensity,
+  OsiTrafficLightClassificationColor,
 } from "./types/osiGroundTruth";
 
 //// COLOR CONFIG ////
@@ -36,6 +37,19 @@ export const LANE_BOUNDARY_COLOR: Record<OsiLaneBoundaryType, Color> = {
   [OsiLaneBoundaryType.SOLID_LINE]: ColorCode("gray", 0.5),
   [OsiLaneBoundaryType.STRUCTURE]: ColorCode("c", 0.5),
   [OsiLaneBoundaryType.UNKNOWN]: ColorCode("gray", 0.5),
+};
+
+export const TRAFFIC_LIGHT_COLOR: Record<
+  OsiTrafficLightClassificationColor,
+  { code: Color; name: string }
+> = {
+  [OsiTrafficLightClassificationColor.UNKNOWN]: { code: ColorCode("gray", 1), name: "Unknown" },
+  [OsiTrafficLightClassificationColor.OTHER]: { code: ColorCode("c", 1), name: "Other" },
+  [OsiTrafficLightClassificationColor.RED]: { code: ColorCode("r", 1), name: "Red" },
+  [OsiTrafficLightClassificationColor.YELLOW]: { code: ColorCode("y", 1), name: "Yellow" },
+  [OsiTrafficLightClassificationColor.GREEN]: { code: ColorCode("g", 1), name: "Green" },
+  [OsiTrafficLightClassificationColor.BLUE]: { code: ColorCode("b", 1), name: "Blue" },
+  [OsiTrafficLightClassificationColor.WHITE]: { code: ColorCode("w", 1), name: "White" },
 };
 
 //// STATIONARY OBJECT MAPPING ////

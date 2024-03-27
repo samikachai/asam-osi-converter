@@ -28,7 +28,9 @@ import {
   STATIONARY_OBJECT_TYPE,
   STATIONARY_OBJECT_MATERIAL,
   STATIONARY_OBJECT_DENSITY,
+  TRAFFIC_LIGHT_COLOR,
 } from "./config";
+import { buildTrafficLightMetadata, buildTrafficLightModel } from "./trafficlights";
 import { preloadDynamicTextures, buildTrafficSignModel } from "./trafficsigns";
 import {
   OsiGroundTruth,
@@ -45,6 +47,7 @@ import {
   OsiMovingObjectVehicleClassificationLightStateGenericLightState,
   OsiIdentifier,
   OsiTrafficSign,
+  OsiTrafficLight,
 } from "./types/osiGroundTruth";
 import {
   OsiDetectedLaneBoundary,
@@ -105,6 +108,31 @@ function buildTrafficSignEntity(
       models.push(buildTrafficSignModel("main", item));
     }
   }
+
+  return {
+    timestamp: time,
+    frame_id,
+    id: id_prefix + obj.id.value.toString(),
+    lifetime: { sec: 0, nsec: 0 },
+    frame_locked: true,
+    // texts,
+    models,
+    metadata,
+  };
+}
+
+function buildTrafficLightEntity(
+  obj: OsiTrafficLight,
+  id_prefix: string,
+  frame_id: string,
+  time: Time,
+  metadata?: KeyValuePair[],
+): PartialSceneEntity {
+  const models = [];
+
+  models.push(
+    buildTrafficLightModel(obj, TRAFFIC_LIGHT_COLOR[obj.classification.color.value].code),
+  );
 
   return {
     timestamp: time,
@@ -321,6 +349,15 @@ function buildSceneEntities(osiGroundTruth: OsiGroundTruth): PartialSceneEntity[
   });
   staticObjectsRenderCache.lastRenderTime = time;
   sceneEntities = sceneEntities.concat(trafficsignObjectSceneEntities);
+
+  // Traffic Light objects
+  const trafficlightObjectSceneEntities = osiGroundTruth.traffic_light.map(
+    (obj: OsiTrafficLight) => {
+      const metadata = buildTrafficLightMetadata(obj);
+      return buildTrafficLightEntity(obj, "traffic_light_", ROOT_FRAME, time, metadata);
+    },
+  );
+  sceneEntities = sceneEntities.concat(trafficlightObjectSceneEntities);
 
   // Lane boundaries
   const laneBoundarySceneEntities = osiGroundTruth.lane_boundary.map((lane_boundary) => {
