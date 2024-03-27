@@ -268,6 +268,7 @@ export interface OsiGroundTruth {
   moving_object: OsiMovingObject[];
   lane_boundary: OsiLaneBoundary[];
   traffic_sign: OsiTrafficSign[];
+  traffic_light: OsiTrafficLight[];
 }
 
 export enum OsiTrafficSignMainSignClassificationType {
@@ -564,4 +565,70 @@ export enum OsiTrafficSignSupplementarySignClassificationType {
   MOTORCYCLE = 22,
   MOTORCYCLE_ALLOWED = 23,
   CAR = 24,
+}
+
+export interface OsiTrafficLight extends OsiObject {
+  classification: OsiTrafficLightClassification;
+}
+
+export interface OsiTrafficLightClassification {
+  color: {
+    value: OsiTrafficLightClassificationColor;
+  };
+  icon: {
+    value: OsiTrafficLightClassificationIcon;
+  };
+  mode: {
+    value: OsiTrafficLightClassificationMode;
+  };
+  counter: number;
+  assigned_lane_id: OsiIdentifier[];
+  is_out_of_service?: boolean;
+}
+
+export enum OsiTrafficLightClassificationColor {
+  UNKNOWN = 0,
+  OTHER = 1,
+  RED = 2,
+  YELLOW = 3,
+  GREEN = 4,
+  BLUE = 5,
+  WHITE = 6,
+}
+
+export enum OsiTrafficLightClassificationIcon {
+  UNKNOWN = 0,
+  OTHER = 1,
+  NONE = 2,
+  ARROW_STRAIGHT_AHEAD = 3,
+  ARROW_LEFT = 4,
+  ARROW_DIAG_LEFT = 5,
+  ARROW_STRAIGHT_AHEAD_LEFT = 6,
+  ARROW_RIGHT = 7,
+  ARROW_DIAG_RIGHT = 8,
+  ARROW_STRAIGHT_AHEAD_RIGHT = 9,
+  ARROW_LEFT_RIGHT = 10,
+  ARROW_DOWN = 11,
+  ARROW_DOWN_LEFT = 12,
+  ARROW_DOWN_RIGHT = 13,
+  ARROW_CROSS = 14,
+  PEDESTRIAN = 15,
+  WALK = 16,
+  DONT_WALK = 17,
+  BICYCLE = 18,
+  PEDESTRIAN_AND_BICYCLE = 19,
+  COUNTDOWN_SECONDS = 20,
+  COUNTDOWN_PERCENT = 21,
+  TRAM = 22,
+  BUS = 23,
+  BUS_AND_TRAM = 24,
+}
+
+export enum OsiTrafficLightClassificationMode {
+  UNKNOWN = 0,
+  OTHER = 1,
+  OFF = 2,
+  CONSTANT = 3,
+  FLASHING = 4,
+  COUNTING = 5,
 }
