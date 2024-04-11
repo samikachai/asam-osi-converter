@@ -30,6 +30,8 @@ jest.mock(
   { virtual: true },
 );
 
+jest.mock("../trafficlights", () => {}, { virtual: true });
+
 describe("OSI Visualizer: Message Converter", () => {
   const mockRegisterMessageConverter = jest.fn();
   const mockExtensionContext = {} as ExtensionContext;
@@ -125,6 +127,7 @@ describe("OSI Visualizer: Message Converter", () => {
     stationary_object: [mockStationaryObject],
     lane_boundary: [mockLaneBoundary],
     traffic_sign: [],
+    traffic_light: [],
   };
 
   beforeEach(() => {
