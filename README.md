@@ -1,13 +1,13 @@
-# ASAM OSI visualizer extension for Foxglove Studio
+# ASAM OSI visualizer extension for Lichtblick
 
 ## What is this extension about?
 
-The goal is to have a foxglove extension which can visualise data which is following the standards of the [Open Simulation Interface (OSI) by ASAM](https://www.asam.net/standards/detail/osi/) using the native 3D panel of foxglove studio.
+The goal is to have a Lichtblick extension which can visualise data which is following the standards of the [Open Simulation Interface (OSI) by ASAM](https://www.asam.net/standards/detail/osi/) using the native 3D panel of Lichtblick.
 
 
 ## Coding guidelines
 
-The code should follow the coding guidelines of foxglove studio. This includes the usage of typescript, prettier, eslint and the foxglove studio sdk.
+The code should follow the coding guidelines of Lichtblick. This includes the usage of typescript, prettier, eslint and the foxglove studio sdk.
 
 ## TODO Code
 
@@ -31,17 +31,6 @@ The code should follow the coding guidelines of foxglove studio. This includes t
 ## Roadmap
 
 - Implement traffic lights visualisation
-
-## Sync with BMW's internal ADP repository
-
-For now every change from/to the internal ADP repository is done manually.
-This means that the code of `/src` is manually copied.
-This is not the final state and will potentially be automated in the future.
-
-
-## Related confluence page
-
-https://asc.bmwgroup.net/wiki/display/ORIONPRODUCTS/Open+Sourcing+OSI+extension
 
 ## Develop
 
