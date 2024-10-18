@@ -17,6 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Dump job github var
+        env:
+          GITHUB_VAR: ${{ toJson(github) }}
+        run: echo "$GITHUB_VAR"
+
       - name: Exit if not on main branch
         if: endsWith(github.event.base_ref, 'main') == false
         run: exit -1
