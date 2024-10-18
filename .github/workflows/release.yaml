@@ -31,8 +31,8 @@ jobs:
       - name: Extract version
         id: extract_version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_ENV
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         id: create_release
@@ -41,7 +41,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: ASAM OSI Converter ${{ env.VERSION }}
+          release_name: ASAM OSI Converter ${{ env.version }}
           draft: false
           prerelease: false
 
@@ -51,6 +51,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lichtblick.asam-osi-converter-${{ env.VERSION }}.foxe
-          asset_name: lichtblick.asam-osi-converter-${{ env.VERSION }}.foxe
+          asset_path: lichtblick.asam-osi-converter-${{ env.version }}.foxe
+          asset_name: lichtblick.asam-osi-converter-${{ env.version }}.foxe
           asset_content_type: application/octet-stream
