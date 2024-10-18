@@ -10,13 +10,16 @@ permissions:
 jobs:
   build_foxe:
     name: build_foxe
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Exit if not on main branch
+        if: endsWith(github.event.base_ref, 'main') == false
+        run: exit -1
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
