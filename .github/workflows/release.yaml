@@ -2,8 +2,7 @@ name: release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    tags: ['v[0-9].[0-9]+.[0-9]+']
 
 permissions:
   contents: write
@@ -11,8 +10,8 @@ permissions:
 jobs:
   build_foxe:
     name: build_foxe
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -33,8 +32,8 @@ jobs:
       - name: Extract version
         id: extract_version
         run: |
-          version=$(node -p "require('./package.json').version")
-          echo "version=$version" >> $GITHUB_ENV
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         id: create_release
@@ -43,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: asam-osi-converter ${{ env.version }}
+          release_name: ASAM OSI Converter ${{ env.VERSION }}
           draft: false
           prerelease: false
 
@@ -53,6 +52,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lichtblick.asam-osi-converter-${{ env.version }}.foxe
-          asset_name: lichtblick.asam-osi-converter-${{ env.version }}.foxe
+          asset_path: lichtblick.asam-osi-converter-${{ env.VERSION }}.foxe
+          asset_name: lichtblick.asam-osi-converter-${{ env.VERSION }}.foxe
           asset_content_type: application/octet-stream
