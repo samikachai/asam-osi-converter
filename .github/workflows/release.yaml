@@ -55,7 +55,7 @@ jobs:
           git checkout main
           git add CHANGELOG.md
           git commit -m "chore: update changelog for main branch"
-          git push origin main
+          git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} main
 
       - name: Create GitHub Release
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
