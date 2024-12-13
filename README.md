@@ -93,13 +93,13 @@ Tags are used to create release points in the project.
 2. Use the following command to create a new tag:
 
    ```bash
-   git tag -a v<version> -m "Release v<version>"
+   git tag -s -a v<version> -m "Release v<version>"
    ```
 
    Example:
 
    ```bash
-   git tag -a v1.0.0 -m "Release v1.0.0"
+   git tag -s -a v1.0.0 -m "ASAM OSI Converter v1.0.0"
    ```
 
 3. Push the tag to the remote repository:
