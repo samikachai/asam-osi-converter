@@ -134,23 +134,6 @@ jobs:
           name: changelog
           path: ./
 
-      - name: Checkout main branch
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Create update-changelog branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b update-changelog
-
-      - name: Commit changelog changes
-        run: |
-          git add --all
-          git commit -m "docs: update CHANGELOG for release"
-          git push origin update-changelog
-
       - name: Create a Pull Request to update the changelog file
         uses: peter-evans/create-pull-request@v5
         with:
