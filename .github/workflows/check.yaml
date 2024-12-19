@@ -1,0 +1,63 @@
+name: check
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: "*"
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Validate package.json
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"
+
+      - name: Clear Yarn Cache
+        run: yarn cache clean
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Audit Dependencies
+        run: yarn audit
+
+      - name: Test Project
+        run: yarn run test
+
+      - name: Check liniting
+        run: yarn run lint:ci
+        continue-on-error: true
+
+      - name: Build Project
+        run: yarn run build
+
+      - name: Download ScanCode Toolkit
+        run: |
+          curl -L -o scancode-toolkit.zip https://github.com/nexB/scancode-toolkit/releases/download/v31.0.0/scancode-toolkit-31.0.0.zip
+          unzip scancode-toolkit.zip -d scancode-toolkit
+
+      - name: Run ScanCode
+        run: |
+          cd scancode-toolkit
+          ./scancode --json-pp ../scancode-result.json ../
+
+      - name: Upload ScanCode Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: scancode-results
+          path: scancode-result.json
