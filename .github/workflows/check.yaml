@@ -53,6 +53,11 @@ jobs:
           mkdir -p scancode-toolkit
           tar -xzf scancode-toolkit.tar.gz -C scancode-toolkit --strip-components=1
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
       - name: Run ScanCode
         run: |
           cd scancode-toolkit
