@@ -59,7 +59,7 @@ jobs:
           ./scancode --json-pp ../scancode-result.json ../
 
       - name: Upload ScanCode Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: scancode-results
           path: scancode-result.json
