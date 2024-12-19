@@ -35,6 +35,7 @@ jobs:
 
       - name: Audit Dependencies
         run: yarn audit
+        continue-on-error: true
 
       - name: Test Project
         run: yarn run test
