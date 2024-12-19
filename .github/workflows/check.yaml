@@ -49,7 +49,7 @@ jobs:
 
       - name: Download ScanCode Toolkit
         run: |
-          curl -L -o scancode-toolkit.zip https://github.com/aboutcode-org/scancode-toolkit/releases/download/v32.3.0/scancode-toolkit-v32.3.0_py3.12-linux.tar.gz
+          curl -L -o scancode-toolkit.tar.gz https://github.com/aboutcode-org/scancode-toolkit/releases/download/v32.3.0/scancode-toolkit-v32.3.0_py3.12-linux.tar.gz
           mkdir -p scancode-toolkit
           tar -xzf scancode-toolkit.tar.gz -C scancode-toolkit --strip-components=1
 
