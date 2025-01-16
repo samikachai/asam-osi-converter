@@ -120,7 +120,10 @@ export function pointListToDashedLinePrimitive(
 export function objectToCubePrimitive(
   x: number,
   y: number,
-  theta: number,
+  z: number,
+  roll: number,
+  pitch: number,
+  yaw: number,
   x_reference_offset: number,
   y_reference_offset: number,
   width: number,
@@ -128,21 +131,22 @@ export function objectToCubePrimitive(
   height: number,
   color: Color,
 ): CubePrimitive {
-  const sin_theta = Math.sin(theta);
-  const cos_theta = Math.cos(theta);
+  const sin_yaw = Math.sin(yaw);
+  const cos_yaw = Math.cos(yaw);
 
   // rotate
-  const processed_x = x + cos_theta * x_reference_offset - sin_theta * y_reference_offset;
-  const processed_y = y + sin_theta * x_reference_offset + cos_theta * y_reference_offset;
+  const processed_x = x + cos_yaw * x_reference_offset - sin_yaw * y_reference_offset;
+  const processed_y = y + sin_yaw * x_reference_offset + cos_yaw * y_reference_offset;
+  const processed_z = z + height / 2.0;
 
   return {
     pose: {
       position: {
         x: processed_x,
         y: processed_y,
-        z: height / 2.0,
+        z: processed_z,
       },
-      orientation: eulerToQuaternion(0, 0, theta),
+      orientation: eulerToQuaternion(roll, pitch, yaw),
     },
     size: {
       x: length,

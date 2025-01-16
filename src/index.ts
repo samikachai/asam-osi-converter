@@ -72,6 +72,9 @@ function buildObjectEntity(
   const cube = objectToCubePrimitive(
     osiObject.base.position.x,
     osiObject.base.position.y,
+    osiObject.base.position.z,
+    osiObject.base.orientation.roll,
+    osiObject.base.orientation.pitch,
     osiObject.base.orientation.yaw,
     x_offset,
     y_offset,
