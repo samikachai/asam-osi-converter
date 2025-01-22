@@ -1,5 +1,6 @@
 import type { Quaternion, Vector3 } from "@foxglove/schemas";
 
+//Reference:https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
 export function eulerToQuaternion(roll: number, pitch: number, yaw: number): Quaternion {
   const cy = Math.cos(yaw * 0.5);
   const sy = Math.sin(yaw * 0.5);

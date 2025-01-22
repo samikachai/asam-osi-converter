@@ -124,29 +124,19 @@ export function objectToCubePrimitive(
   roll: number,
   pitch: number,
   yaw: number,
-  x_reference_offset: number,
-  y_reference_offset: number,
   width: number,
   length: number,
   height: number,
   color: Color,
 ): CubePrimitive {
-  const sin_yaw = Math.sin(yaw);
-  const cos_yaw = Math.cos(yaw);
-
-  // rotate
-  const processed_x = x + cos_yaw * x_reference_offset - sin_yaw * y_reference_offset;
-  const processed_y = y + sin_yaw * x_reference_offset + cos_yaw * y_reference_offset;
-  const processed_z = z + height / 2.0;
-
   return {
     pose: {
       position: {
-        x: processed_x,
-        y: processed_y,
-        z: processed_z,
+        x,
+        y,
+        z,
       },
-      orientation: eulerToQuaternion(roll, pitch, yaw),
+      orientation: eulerToQuaternion(yaw, pitch, roll),
     },
     size: {
       x: length,
