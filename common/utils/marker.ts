@@ -136,7 +136,7 @@ export function objectToCubePrimitive(
         y,
         z,
       },
-      orientation: eulerToQuaternion(yaw, pitch, roll),
+      orientation: eulerToQuaternion(yaw + Math.PI / 2, pitch, roll),
     },
     size: {
       x: length,
