@@ -7,7 +7,6 @@ import {
   type LinePrimitive,
   type Point3,
   type Quaternion,
-  type Vector2,
   type Vector3,
 } from "@foxglove/schemas";
 import { Time } from "@foxglove/schemas/schemas/typescript/Time";
@@ -65,16 +64,13 @@ function buildObjectEntity(
   time: Time,
   metadata?: KeyValuePair[],
 ): PartialSceneEntity {
-  // Reference is center of object box.
-  const x_offset = 0;
-  const y_offset = 0;
-
   const cube = objectToCubePrimitive(
     osiObject.base.position.x,
     osiObject.base.position.y,
+    osiObject.base.position.z,
+    osiObject.base.orientation.roll,
+    osiObject.base.orientation.pitch,
     osiObject.base.orientation.yaw,
-    x_offset,
-    y_offset,
     osiObject.base.dimension.width,
     osiObject.base.dimension.length,
     osiObject.base.dimension.height,
@@ -149,10 +145,6 @@ function buildLaneBoundaryEntity(
   frame_id: string,
   time: Time,
 ): PartialSceneEntity {
-  const boundaryPoints = osiLaneBoundary.boundary_line.map(
-    (point) => ({ x: point.position.x, y: point.position.y }) as Vector2,
-  );
-
   const color = LANE_BOUNDARY_COLOR[osiLaneBoundary.classification.type];
   let line: LinePrimitive;
   switch (osiLaneBoundary.classification.type) {
@@ -176,7 +168,7 @@ function buildLaneBoundaryEntity(
       break;
     default:
       line = pointListToLinePrimitive(
-        boundaryPoints,
+        osiLaneBoundary.boundary_line.map((point) => point.position as Vector3),
         osiLaneBoundary.boundary_line[0]?.width ?? 0,
         color,
       );
